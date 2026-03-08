@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skittles Retos 🍬</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #1a1a2e; --card: #16213e; --yellow: #FFD700; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+
+  .bg-skittles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .bg-dot {
+    position: absolute; border-radius: 50%; opacity: 0.07;
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0%   { transform: translateY(110vh) rotate(0deg);   opacity: 0; }
+    10%  { opacity: 0.09; }
+    90%  { opacity: 0.09; }
+    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+  }
+
+  .wrapper {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    align-items: center;
+    width: 100%; max-width: 420px; padding: 0 20px;
+  }
+
+  h1 {
+    font-family: 'Boogaloo', cursive;
+    font-size: clamp(2.2rem, 6vw, 3.5rem);
+    color: white; text-align: center; letter-spacing: 1px;
+    margin-bottom: 4px;
+    text-shadow: 0 0 30px rgba(255,255,255,0.2);
+  }
+  h1 span { color: var(--yellow); }
+  .subtitle { color: rgba(255,255,255,0.5); font-size: 1rem; margin-bottom: 36px; text-align: center; }
+
+  /* Steps */
+  .step { display: none; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+  .step.active { display: flex; }
+
+  /* Bag */
+  .bag-container {
+    cursor: pointer; user-select: none;
+    transition: transform 0.15s;
+  }
+  .bag-container:hover  { transform: scale(1.05); }
+  .bag-container:active { transform: scale(0.96); }
+  .bag-svg {
+    width: 190px;
+    filter: drop-shadow(0 10px 30px rgba(255,200,0,0.25));
+    transition: filter 0.3s;
+  }
+  .bag-container:hover .bag-svg { filter: drop-shadow(0 15px 40px rgba(255,200,0,0.5)); }
+
+  .bag-container.shake { animation: shake 0.55s ease; }
+  @keyframes shake {
+    0%,100% { transform: rotate(0deg) scale(1); }
+    15% { transform: rotate(-9deg) scale(1.06); }
+    30% { transform: rotate(9deg)  scale(1.08); }
+    45% { transform: rotate(-6deg) scale(1.06); }
+    60% { transform: rotate(6deg)  scale(1.05); }
+    75% { transform: rotate(-3deg) scale(1.03); }
+  }
+  .bag-container.flyaway { animation: flyAway 0.45s ease-in forwards; }
+  @keyframes flyAway {
+    0%   { transform: scale(1)   translateY(0);    opacity: 1; }
+    100% { transform: scale(0.3) translateY(-130px); opacity: 0; }
+  }
+
+  .tap-hint {
+    color: rgba(255,255,255,0.4); font-size: 0.85rem;
+    text-align: center;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.95} }
+
+  /* Skittles spread */
+  .spread-hint { color: rgba(255,255,255,0.5); font-size: 0.9rem; text-align: center; animation: pulse 2s ease-in-out infinite; }
+
+  .skittles-row { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+
+  .skittle-btn {
+    width: 64px; height: 64px; border-radius: 50%;
+    border: none; cursor: pointer;
+    font-family: 'Boogaloo', cursive;
+    font-size: 1.7rem; font-weight: bold;
+    color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    opacity: 0;
+    transform: translateY(-60px) scale(0.2);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .skittle-btn.drop { animation: skittleDrop 0.55s cubic-bezier(0.23,1.3,0.32,1) forwards; }
+  @keyframes skittleDrop {
+    0%   { transform: translateY(-60px) scale(0.2); opacity: 0; }
+    60%  { transform: translateY(8px)   scale(1.12); opacity: 1; }
+    80%  { transform: translateY(-4px)  scale(0.96); }
+    100% { transform: translateY(0)     scale(1);    opacity: 1; }
+  }
+  .skittle-btn.landed:hover  { transform: scale(1.2) translateY(-5px) !important; }
+  .skittle-btn.landed:active { transform: scale(0.93) !important; }
+
+  /* Challenge */
+  .chosen-skittle {
+    width: 82px; height: 82px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Boogaloo', cursive; font-size: 2.3rem;
+    color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    animation: popIn 0.5s cubic-bezier(0.23,1.3,0.32,1) forwards;
+  }
+  @keyframes popIn {
+    0%   { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+    70%  { transform: scale(1.15) rotate(4deg);  opacity: 1; }
+    100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+  }
+
+  .challenge-card {
+    background: var(--card); border-radius: 24px;
+    padding: 28px 26px; width: 100%; text-align: center;
+    border: 2px solid transparent;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    animation: slideUp 0.5s 0.15s cubic-bezier(0.23,1.1,0.32,1) both;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+  }
+  .color-label { font-family: 'Boogaloo', cursive; font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; opacity: 0.85; }
+  .challenge-emoji { font-size: 2.2rem; margin-bottom: 8px; display: block; }
+  .challenge-text  { font-size: 1.2rem; font-weight: 900; color: white; line-height: 1.35; }
+
+  .play-again-btn {
+    background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 50px; padding: 10px 30px;
+    color: white; font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; transition: background 0.2s, transform 0.15s;
+  }
+  .play-again-btn:hover  { background: rgba(255,255,255,0.18); transform: scale(1.04); }
+  .play-again-btn:active { transform: scale(0.97); }
+
+  /* Particles */
+  .particle {
+    position: fixed; pointer-events: none; border-radius: 50%;
+    animation: particleFly 0.9s ease-out forwards; z-index: 100;
+  }
+  @keyframes particleFly {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+  }
+
+  /* Streak */
+  .streak {
+    position: fixed; top: 20px; right: 20px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px); border-radius: 50px;
+    padding: 8px 18px; color: white; font-weight: 700; font-size: 0.9rem;
+    display: flex; align-items: center; gap: 6px; z-index: 10;
+  }
+  .streak-count { color: var(--yellow); font-family: 'Boogaloo', cursive; font-size: 1.2rem; }
+</style>
+</head>
+<body>
+
+<div class="bg-skittles" id="bgSkittles"></div>
+<div class="streak">🔥 Retos: <span class="streak-count" id="streakCount">0</span></div>
+
+<div class="wrapper">
+  <h1>🍬 <span>Skittles</span> Retos</h1>
+  <p class="subtitle">¡Agarra la bolsa y descubre tu reto!</p>
+
+  <!-- STEP 1: Bolsa -->
+  <div class="step active" id="stepBag">
+    <div class="bag-container" id="bagBtn">
+      <svg class="bag-svg" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M30 80 Q20 90 18 120 L14 190 Q12 215 30 220 L170 220 Q188 215 186 190 L182 120 Q180 90 170 80 Z" fill="#1a1a1a" stroke="#333" stroke-width="2"/>
+        <path d="M30 80 Q20 90 18 120 L14 190 Q12 215 30 220 L170 220 Q188 215 186 190 L182 120 Q180 90 170 80 Z" fill="url(#bagGrad)"/>
+        <clipPath id="bagClip">
+          <path d="M30 80 Q20 90 18 120 L14 190 Q12 215 30 220 L170 220 Q188 215 186 190 L182 120 Q180 90 170 80 Z"/>
+        </clipPath>
+        <g clip-path="url(#bagClip)">
+          <rect x="10" y="120" width="180" height="22" fill="#FF3B3B" opacity="0.7"/>
+          <rect x="10" y="142" width="180" height="22" fill="#FF8C00" opacity="0.7"/>
+          <rect x="10" y="164" width="180" height="22" fill="#FFD700" opacity="0.7"/>
+          <rect x="10" y="186" width="180" height="22" fill="#3DD68C" opacity="0.7"/>
+          <rect x="10" y="208" width="180" height="22" fill="#9B59B6" opacity="0.7"/>
+        </g>
+        <path d="M60 80 Q65 50 75 40 L85 30 Q100 20 115 30 L125 40 Q135 50 140 80 Z" fill="#222" stroke="#333" stroke-width="2"/>
+        <path d="M60 80 Q65 50 75 40 L85 30 Q100 20 115 30 L125 40 Q135 50 140 80 Z" fill="url(#topGrad)"/>
+        <rect x="55" y="76" width="90" height="12" rx="6" fill="#FFD700" opacity="0.9"/>
+        <text x="100" y="108" text-anchor="middle" font-family="Boogaloo, cursive" font-size="26" font-weight="bold" fill="white" opacity="0.95">Skittles</text>
+        <text x="100" y="122" text-anchor="middle" font-family="Nunito, sans-serif" font-size="9" fill="rgba(255,255,255,0.6)" letter-spacing="2">TASTE THE RAINBOW</text>
+        <ellipse cx="60" cy="130" rx="15" ry="30" fill="white" opacity="0.04" transform="rotate(-15,60,130)"/>
+        <defs>
+          <linearGradient id="bagGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#2a2a2a"/><stop offset="100%" stop-color="#111"/>
+          </linearGradient>
+          <linearGradient id="topGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3a3a3a"/><stop offset="100%" stop-color="#1a1a1a"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <p class="tap-hint">👆 ¡Toca la bolsa!</p>
+  </div>
+
+  <!-- STEP 2: Los 5 skittles -->
+  <div class="step" id="stepSkittles">
+    <p class="spread-hint">🍬 ¿Cuál te salió? ¡Tócalo!</p>
+    <div class="skittles-row" id="skittlesRow"></div>
+  </div>
+
+  <!-- STEP 3: Reto -->
+  <div class="step" id="stepChallenge">
+    <div class="chosen-skittle" id="chosenSkittle">S</div>
+    <div class="challenge-card" id="challengeCard">
+      <span class="challenge-emoji" id="challengeEmoji"></span>
+      <div class="color-label" id="colorLabel"></div>
+      <div class="challenge-text" id="challengeText"></div>
+    </div>
+    <button class="play-again-btn" id="playAgainBtn">🎲 Otra vez</button>
+  </div>
+</div>
+
+<script>
+const COLORS = {
+  red:    { hex: '#FF3B3B', name: '¡Rojo!',     glow: 'rgba(255,59,59,0.6)' },
+  orange: { hex: '#FF8C00', name: '¡Naranja!',  glow: 'rgba(255,140,0,0.6)' },
+  yellow: { hex: '#FFD700', name: '¡Amarillo!', glow: 'rgba(255,215,0,0.6)' },
+  green:  { hex: '#3DD68C', name: '¡Verde!',    glow: 'rgba(61,214,140,0.6)' },
+  purple: { hex: '#9B59B6', name: '¡Morado!',   glow: 'rgba(155,89,182,0.6)' },
+};
+
+const CHALLENGES = {
+  red: [
+    { emoji: '📱', text: 'Escríbele a un famoso y publícalo a tu story' },
+    { emoji: '💀', text: 'Llama a un hotel hablando en otro idioma y cuelga' },
+    { emoji: '🎤', text: 'Canta una canción para niños en voz alta donde estés' },
+    { emoji: '💌', text: 'Mándale un meme a alguien con el que no hables' },
+    { emoji: '🔥', text: 'Cambia tu foto de perfil por una que nunca subirías' },
+  ],
+  orange: [
+    { emoji: '🤳', text: 'Sube una foto sin filtros a tus stories AHORA' },
+    { emoji: '🍊', text: 'Dile a la persona más cercana que se case contigo' },
+    { emoji: '💃', text: 'Pídele un vaso de agua a tus vecinos' },
+    { emoji: '📞', text: 'Invita a una cita a tu crush' },
+    { emoji: '🎭', text: 'Inscríbete a un taller random en tu ciudad' },
+  ],
+  yellow: [
+    { emoji: '😂', text: 'Cuéntale un chiste malísimo a quien tengas cerca' },
+    { emoji: '🌟', text: 'Di 3 cosas que te encantan de ti mismo en voz alta' },
+    { emoji: '🍋', text: 'Escríbele un elogio exagerado a tu jefe o profe' },
+    { emoji: '✨', text: 'Deja que tus amigos te dibujen lo que sea en tu frente y sal a la calle' },
+    { emoji: '🌈', text: 'Cambia el nombre de un contacto por algo divertido y mándale captura' },
+  ],
+  green: [
+    { emoji: '🌿', text: 'Sal afuera y grita "¡QUÉ BONITO DÍA!" bien fuerte' },
+    { emoji: '🐸', text: 'Haz 10 sentadillas de una sola vez, ya' },
+    { emoji: '🍀', text: 'Escríbele a alguien con quien no hablas hace tiempo' },
+    { emoji: '🌱', text: 'Aprende a decir algo en 3 idiomas distintos y envíaselo a alguien que sepa el lenguaje' },
+    { emoji: '🎯', text: 'Juega a la botella por 10 minutos' },
+  ],
+  purple: [
+    { emoji: '🔮', text: 'Di tu peor secreto…' },
+    { emoji: '🌙', text: 'Pon una canción random y dedícasela a alguien' },
+    { emoji: '💜', text: '¡Te salvas! 🎉' },
+    { emoji: '🎲', text: 'Deja que alguien más elija qué comes hoy' },
+    { emoji: '🦄', text: 'Compra algo random y regálaselo a alguien que no conozcas' },
+  ],
+};
+
+const colorKeys = Object.keys(COLORS);
+let streak = 0;
+let isAnimating = false;
+
+// Background dots
+const bg = document.getElementById('bgSkittles');
+['#FF3B3B','#FF8C00','#FFD700','#3DD68C','#9B59B6'].forEach((c, ci) => {
+  for (let i = 0; i < 6; i++) {
+    const d = document.createElement('div');
+    d.className = 'bg-dot';
+    const size = 20 + Math.random() * 60;
+    d.style.cssText = `width:${size}px;height:${size}px;background:${c};left:${Math.random()*100}%;animation-duration:${9+Math.random()*14}s;animation-delay:${Math.random()*-22}s;`;
+    bg.appendChild(d);
+  }
+});
+
+function spawnParticles(x, y, color, count = 16) {
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (Math.PI * 2 * i / count) + Math.random() * 0.4;
+    const dist  = 55 + Math.random() * 80;
+    const size  = 6 + Math.random() * 10;
+    p.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:${color};--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px;animation-duration:${0.6+Math.random()*0.4}s;`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1100);
+  }
+}
+
+function setStep(id) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function skittleCSS(hex, glow) {
+  return {
+    bg: `radial-gradient(circle at 35% 30%, ${hex}ee, ${hex}99)`,
+    shadow: `0 8px 25px rgba(0,0,0,0.4),inset 0 -4px 10px rgba(0,0,0,0.2),inset 0 4px 8px rgba(255,255,255,0.3),0 0 28px ${glow}`,
+  };
+}
+
+// STEP 1: Bag → skittles
+document.getElementById('bagBtn').addEventListener('click', function(e) {
+  if (isAnimating) return;
+  isAnimating = true;
+
+  spawnParticles(e.clientX, e.clientY, '#FFD700');
+  this.classList.add('shake');
+
+  setTimeout(() => {
+    this.classList.remove('shake');
+    this.classList.add('flyaway');
+
+    setTimeout(() => {
+      setStep('stepSkittles');
+      buildSkittles();
+      isAnimating = false;
+    }, 380);
+  }, 560);
+});
+
+function buildSkittles() {
+  const row = document.getElementById('skittlesRow');
+  row.innerHTML = '';
+
+  colorKeys.forEach((key, i) => {
+    const color = COLORS[key];
+    const btn = document.createElement('button');
+    btn.className = 'skittle-btn';
+    btn.textContent = 'S';
+    btn.dataset.key = key;
+
+    const css = skittleCSS(color.hex, color.glow);
+    btn.style.background = css.bg;
+    btn.style.boxShadow  = css.shadow;
+
+    row.appendChild(btn);
+
+    setTimeout(() => {
+      btn.classList.add('drop');
+      setTimeout(() => btn.classList.add('landed'), 600);
+    }, i * 100);
+
+    btn.addEventListener('click', onSkittlePick);
+  });
+}
+
+// STEP 2: Pick skittle → show challenge
+function onSkittlePick(e) {
+  if (isAnimating) return;
+  isAnimating = true;
+
+  const key   = e.currentTarget.dataset.key;
+  const color = COLORS[key];
+  const list  = CHALLENGES[key];
+  const pick  = list[Math.floor(Math.random() * list.length)];
+
+  spawnParticles(e.clientX, e.clientY, color.hex, 22);
+
+  e.currentTarget.style.transform = 'scale(1.35)';
+
+  setTimeout(() => {
+    setStep('stepChallenge');
+
+    // Chosen skittle
+    const chosen = document.getElementById('chosenSkittle');
+    const css = skittleCSS(color.hex, color.glow);
+    chosen.style.background = css.bg;
+    chosen.style.boxShadow  = css.shadow + `,0 0 55px ${color.glow}`;
+
+    // Card
+    const card = document.getElementById('challengeCard');
+    card.style.borderColor = color.hex + '55';
+    card.style.boxShadow   = `0 20px 50px rgba(0,0,0,0.4),0 0 40px ${color.glow.replace('0.6','0.15')}`;
+
+    document.getElementById('colorLabel').style.color    = color.hex;
+    document.getElementById('colorLabel').textContent    = color.name;
+    document.getElementById('challengeEmoji').textContent = pick.emoji;
+    document.getElementById('challengeText').textContent  = pick.text;
+
+    // Force re-animation
+    chosen.style.animation = 'none'; void chosen.offsetWidth;
+    chosen.style.animation = '';
+    card.style.animation   = 'none'; void card.offsetWidth;
+    card.style.animation   = '';
+
+    const rect = chosen.getBoundingClientRect();
+    setTimeout(() => spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2, color.hex, 20), 200);
+
+    streak++;
+    document.getElementById('streakCount').textContent = streak;
+    isAnimating = false;
+  }, 240);
+}
+
+// STEP 3: Play again
+document.getElementById('playAgainBtn').addEventListener('click', function() {
+  if (isAnimating) return;
+  const bag = document.getElementById('bagBtn');
+  bag.classList.remove('flyaway', 'shake');
+  void bag.offsetWidth;
+  setStep('stepBag');
+});
+</script>
+</body>
+</html>
